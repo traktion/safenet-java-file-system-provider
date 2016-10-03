@@ -1,25 +1,29 @@
-package java.org.traktion0.safenet.filesystem;
+package org.traktion0.safenet.filesystem;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.Collections;
 import java.util.Set;
 
 /**
  * Created by paul on 05/09/16.
  */
 public class SafenetFileSystem extends FileSystem {
-    private final SafenetFileSystemProvider provider;
+    private static final String SEPARATOR = "/";
+
+    private final FileSystemProvider provider;
     private final URI uri;
     private final FileStore fileStore;
 
-    public SafenetFileSystem(SafenetFileSystemProvider provider, URI uri) {
+    private boolean isOpen;
+
+    public SafenetFileSystem(FileSystemProvider provider, URI uri) {
         this.provider = provider;
         this.uri = uri;
         fileStore = new SafenetFileStore(uri);
+        this.isOpen = true;
     }
 
     @Override
@@ -29,12 +33,12 @@ public class SafenetFileSystem extends FileSystem {
 
     @Override
     public void close() throws IOException {
-
+        isOpen = false;
     }
 
     @Override
     public boolean isOpen() {
-        return false;
+        return isOpen;
     }
 
     @Override
@@ -44,7 +48,7 @@ public class SafenetFileSystem extends FileSystem {
 
     @Override
     public String getSeparator() {
-        return "/";
+        return SEPARATOR;
     }
 
     @Override
@@ -54,17 +58,23 @@ public class SafenetFileSystem extends FileSystem {
 
     @Override
     public Iterable<FileStore> getFileStores() {
-        return Collections.singletonList(fileStore);
+        return null;
     }
 
     @Override
     public Set<String> supportedFileAttributeViews() {
-        return Collections.singleton("basic");
+        return null;
     }
 
     @Override
     public Path getPath(String s, String... strings) {
-        return null;
+        String fullPath = s;
+        for (String pathPart: strings) {
+            fullPath += getSeparator() + pathPart;
+        }
+
+        URI uri = URI.create(fullPath);
+        return new SafenetPath(this, uri);
     }
 
     @Override
@@ -81,4 +91,6 @@ public class SafenetFileSystem extends FileSystem {
     public WatchService newWatchService() throws IOException {
         return null;
     }
+
+
 }

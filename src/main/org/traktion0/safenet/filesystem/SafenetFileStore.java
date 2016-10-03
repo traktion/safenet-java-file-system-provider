@@ -1,4 +1,4 @@
-package java.org.traktion0.safenet.filesystem;
+package org.traktion0.safenet.filesystem;
 
 import java.io.IOException;
 import java.net.URI;
@@ -11,15 +11,15 @@ import java.nio.file.attribute.FileStoreAttributeView;
  */
 public class SafenetFileStore extends FileStore {
 
-    private final String name;
+    private final URI uri;
 
     public SafenetFileStore(URI uri) {
-        name = uri.toString();
+        this.uri = uri;
     }
 
     @Override
     public String name() {
-        return name;
+        return uri.getScheme() + "://" + uri.getHost();
     }
 
     @Override
@@ -66,4 +66,6 @@ public class SafenetFileStore extends FileStore {
     public Object getAttribute(String s) throws IOException {
         return null;
     }
+
+
 }
