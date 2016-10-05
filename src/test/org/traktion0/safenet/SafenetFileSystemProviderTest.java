@@ -10,8 +10,12 @@ import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -106,5 +110,59 @@ public class SafenetFileSystemProviderTest {
             Path path = new SafenetPath(fileSystem, URI.create("app/filesystemdir"));
             provider.createDirectory(path);
         }
+    }
+
+    @Test
+    public void testReadBasicFileAttributesForFileReturnsSuccess() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithGetFileAttributesReturnsSuccess();
+        env.put("SafenetFactory", safenetFactory);
+
+        BasicFileAttributes basicFileAttributes;
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            basicFileAttributes = provider.readAttributes(
+                    new SafenetPath(fileSystem, URI.create("app/file.txt")),
+                    BasicFileAttributes.class
+            );
+        }
+
+        verify(safenetFactory, times(1)).makeGetFileAttributesCommand(anyString());
+        verify(safenetFactory.makeGetFileAttributesCommand(anyString()), times(1)).execute();
+
+        assertEquals(FileTime.fromMillis(Instant.parse("2016-10-04T09:34:44.523Z").toEpochMilli()), basicFileAttributes.creationTime());
+        assertEquals(FileTime.fromMillis(Instant.parse("2016-10-05T10:24:24.123Z").toEpochMilli()), basicFileAttributes.lastModifiedTime());
+        assertEquals(true, basicFileAttributes.isRegularFile());
+        assertEquals(false, basicFileAttributes.isDirectory());
+        assertEquals(false, basicFileAttributes.isOther());
+        assertEquals(false, basicFileAttributes.isSymbolicLink());
+        assertEquals(3067, basicFileAttributes.size());
+    }
+
+    @Test
+    public void testReadBasicFileAttributesForDirectoryReturnsSuccess() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithGetDirectoryReturnsSuccess();
+        env.put("SafenetFactory", safenetFactory);
+
+        BasicFileAttributes basicFileAttributes;
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            basicFileAttributes = provider.readAttributes(
+                    new SafenetPath(fileSystem, URI.create("app/directory")),
+                    BasicFileAttributes.class
+            );
+        }
+
+        verify(safenetFactory, times(1)).makeGetDirectoryCommand(anyString());
+        verify(safenetFactory.makeGetDirectoryCommand(anyString()), times(1)).execute();
+
+        assertEquals(FileTime.from(1475701221, TimeUnit.SECONDS), basicFileAttributes.lastModifiedTime());
+        assertEquals(FileTime.from(1475701203, TimeUnit.SECONDS), basicFileAttributes.creationTime());
+        assertEquals(false, basicFileAttributes.isRegularFile());
+        assertEquals(true, basicFileAttributes.isDirectory());
+        assertEquals(false, basicFileAttributes.isOther());
+        assertEquals(false, basicFileAttributes.isSymbolicLink());
+        assertEquals(0, basicFileAttributes.size());
     }
 }

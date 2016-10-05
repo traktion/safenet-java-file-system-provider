@@ -1,5 +1,7 @@
 package org.traktion0.safenet.filesystem;
 
+import org.traktion0.safenet.client.beans.SafenetDirectory;
+import org.traktion0.safenet.client.beans.SafenetFile;
 import org.traktion0.safenet.client.commands.SafenetBadRequestException;
 import org.traktion0.safenet.client.commands.SafenetFactory;
 
@@ -206,7 +208,29 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> aClass, LinkOption... linkOptions) throws IOException {
-        return null;
+        String pathString = path.normalize().toString();
+        try {
+            // PG:TODO: Factory this out
+            try {
+                if (aClass == BasicFileAttributes.class) {
+                    SafenetFile safenetFile = safenetFactory.makeGetFileAttributesCommand(pathString).execute();
+                    return (A) new SafenetBasicFileAttributes(safenetFile);
+                } else {
+                    return null;
+                }
+            } catch (SafenetBadRequestException e) {
+                // PG: Currently, there is no way to get info on a file or a directory, so have to test for file first
+                //     then fall back to test a directory
+                if (aClass == BasicFileAttributes.class) {
+                    SafenetDirectory safenetDirectory = safenetFactory.makeGetDirectoryCommand(pathString).execute();
+                    return (A) new SafenetBasicFileAttributes(safenetDirectory);
+                } else {
+                    return null;
+                }
+            }
+        } catch(HystrixRuntimeException | SafenetBadRequestException e) {
+            throw new IOException("Get File/Directory Attributes '" + pathString + "' failed.", e);
+        }
     }
 
     @Override

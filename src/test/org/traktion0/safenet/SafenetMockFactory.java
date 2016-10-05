@@ -1,11 +1,13 @@
 package org.traktion0.safenet;
 
-import org.traktion0.safenet.client.commands.CreateDirectory;
-import org.traktion0.safenet.client.commands.DeleteAuthToken;
-import org.traktion0.safenet.client.commands.SafenetBadRequestException;
-import org.traktion0.safenet.client.commands.SafenetFactory;
+import org.traktion0.safenet.client.beans.Info;
+import org.traktion0.safenet.client.beans.SafenetDirectory;
+import org.traktion0.safenet.client.beans.SafenetFile;
+import org.traktion0.safenet.client.commands.*;
 
 import javax.ws.rs.WebApplicationException;
+
+import java.time.OffsetDateTime;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -44,6 +46,45 @@ public abstract class SafenetMockFactory {
         WebApplicationException e = new WebApplicationException("Not Found", 404);
         when(safenetFactory.makeCreateDirectoryCommand(anyString())).thenReturn(createDirectory);
         when(createDirectory.execute()).thenThrow(new SafenetBadRequestException(e.getMessage(), e.getCause()));
+
+        return safenetFactory;
+    }
+
+    public static SafenetFactory makeSafenetFactoryMockWithGetFileAttributesReturnsSuccess() {
+        SafenetFactory safenetFactory = makeBasicSafenetFactoryMock();
+
+        SafenetFile safenetFile = new SafenetFile();
+        safenetFile.setContentLength(3067);
+        safenetFile.setContentRange("bytes 0-3067/3067");
+        safenetFile.setAcceptRanges("bytes");
+        safenetFile.setContentType("image/svg+xml");
+        safenetFile.setCreatedOn(OffsetDateTime.parse("2016-10-04T09:34:44.523Z"));
+        safenetFile.setLastModified(OffsetDateTime.parse("2016-10-05T10:24:24.123Z"));
+
+        GetFileAttributes getFileAttributes = mock(GetFileAttributes.class);
+        when(safenetFactory.makeGetFileAttributesCommand(anyString())).thenReturn(getFileAttributes);
+        when(getFileAttributes.execute()).thenReturn(safenetFile);
+
+        return safenetFactory;
+    }
+
+    public static SafenetFactory makeSafenetFactoryMockWithGetDirectoryReturnsSuccess() {
+        SafenetFactory safenetFactory = makeBasicSafenetFactoryMock();
+
+        GetFileAttributes getFileAttributes = mock(GetFileAttributes.class);
+        WebApplicationException e = new WebApplicationException("Not Found", 404);
+        when(safenetFactory.makeGetFileAttributesCommand(anyString())).thenReturn(getFileAttributes);
+        when(getFileAttributes.execute()).thenThrow(new SafenetBadRequestException(e.getMessage(), e.getCause()));
+
+        SafenetDirectory safenetDirectory = new SafenetDirectory();
+        Info info = new Info();
+        info.setCreatedOn(1475701203);
+        info.setModifiedOn(1475701221);
+        safenetDirectory.setInfo(info);
+
+        GetDirectory getDirectory = mock(GetDirectory.class);
+        when(safenetFactory.makeGetDirectoryCommand(anyString())).thenReturn(getDirectory);
+        when(getDirectory.execute()).thenReturn(safenetDirectory);
 
         return safenetFactory;
     }
