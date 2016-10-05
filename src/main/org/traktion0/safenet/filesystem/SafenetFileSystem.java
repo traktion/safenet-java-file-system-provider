@@ -1,5 +1,7 @@
 package org.traktion0.safenet.filesystem;
 
+import org.traktion0.safenet.client.commands.SafenetFactory;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
@@ -16,14 +18,16 @@ public class SafenetFileSystem extends FileSystem {
     private final FileSystemProvider provider;
     private final URI uri;
     private final FileStore fileStore;
+    private final SafenetFactory safenetFactory;
 
     private boolean isOpen;
 
-    public SafenetFileSystem(FileSystemProvider provider, URI uri) {
+    public SafenetFileSystem(FileSystemProvider provider, URI uri, SafenetFactory safenetFactory) {
         this.provider = provider;
         this.uri = uri;
         fileStore = new SafenetFileStore(uri);
         this.isOpen = true;
+        this.safenetFactory = safenetFactory;
     }
 
     @Override
@@ -33,6 +37,9 @@ public class SafenetFileSystem extends FileSystem {
 
     @Override
     public void close() throws IOException {
+        if (safenetFactory != null) {
+            safenetFactory.makeDeleteAuthTokenCommand().execute();
+        }
         isOpen = false;
     }
 

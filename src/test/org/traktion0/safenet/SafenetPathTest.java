@@ -26,7 +26,9 @@ public class SafenetPathTest {
 
     @Before
     public void setUp() throws Exception {
-        Map<String, String> env = new HashMap<>();
+        Map<String, Object> env = new HashMap<>();
+        env.put("SafenetFactory", SafenetMockFactory.makeBasicSafenetFactoryMock());
+
         URI uri = URI.create(URI_HOST_STRING);
         SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
         fileSystem = provider.newFileSystem(uri, env);

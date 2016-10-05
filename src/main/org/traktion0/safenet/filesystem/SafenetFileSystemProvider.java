@@ -1,5 +1,8 @@
 package org.traktion0.safenet.filesystem;
 
+import org.traktion0.safenet.client.commands.SafenetBadRequestException;
+import org.traktion0.safenet.client.commands.SafenetFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,6 +17,7 @@ import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
+import com.netflix.hystrix.exception.HystrixRuntimeException;
 
 /**
  * Created by paul on 04/09/16.
@@ -21,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 public class SafenetFileSystemProvider extends FileSystemProvider {
 
     private final Map<URI, FileSystem> fileSystems = new HashMap<>();
+    private SafenetFactory safenetFactory;
 
     @Override
     public String getScheme() {
@@ -36,7 +41,13 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
                 throw new FileSystemAlreadyExistsException();
             }
 
-            FileSystem fs = new SafenetFileSystem(this, uriHost);
+            if (map.containsKey("SafenetFactory")) {
+                safenetFactory = (SafenetFactory) map.get("SafenetFactory");
+            } else {
+                throw new IOException("Required SafenetFactory not provided.");
+            }
+
+            FileSystem fs = new SafenetFileSystem(this, uriHost, safenetFactory);
             fileSystems.put(uriHost, fs);
 
             return fs;
@@ -144,28 +155,13 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
-    public void createSymbolicLink(Path path, Path path1, FileAttribute<?>... fileAttributes) throws IOException {
-        super.createSymbolicLink(path, path1, fileAttributes);
-    }
-
-    @Override
-    public void createLink(Path path, Path path1) throws IOException {
-        super.createLink(path, path1);
-    }
-
-    @Override
-    public boolean deleteIfExists(Path path) throws IOException {
-        return super.deleteIfExists(path);
-    }
-
-    @Override
-    public Path readSymbolicLink(Path path) throws IOException {
-        return super.readSymbolicLink(path);
-    }
-
-    @Override
     public void createDirectory(Path path, FileAttribute<?>... fileAttributes) throws IOException {
-
+        String pathString = path.normalize().toString();
+        try {
+            safenetFactory.makeCreateDirectoryCommand(pathString).execute();
+        } catch(HystrixRuntimeException | SafenetBadRequestException e) {
+            throw new IOException("Create directory '" + pathString + "' failed.", e);
+        }
     }
 
     @Override
