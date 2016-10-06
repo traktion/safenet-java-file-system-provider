@@ -148,7 +148,7 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public FileChannel newFileChannel(Path path, Set<? extends OpenOption> set, FileAttribute<?>... fileAttributes) throws IOException {
-        return super.newFileChannel(path, set, fileAttributes);
+        return new SafenetFileChannel(safenetFactory, path, set, fileAttributes);
     }
 
     @Override

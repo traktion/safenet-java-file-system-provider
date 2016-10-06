@@ -4,9 +4,13 @@ import org.traktion0.safenet.client.beans.Info;
 import org.traktion0.safenet.client.beans.SafenetDirectory;
 import org.traktion0.safenet.client.beans.SafenetFile;
 import org.traktion0.safenet.client.commands.*;
+import sun.misc.IOUtils;
 
 import javax.ws.rs.WebApplicationException;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 
 import static org.mockito.Matchers.anyString;
@@ -85,6 +89,28 @@ public abstract class SafenetMockFactory {
         GetDirectory getDirectory = mock(GetDirectory.class);
         when(safenetFactory.makeGetDirectoryCommand(anyString())).thenReturn(getDirectory);
         when(getDirectory.execute()).thenReturn(safenetDirectory);
+
+        return safenetFactory;
+    }
+
+    public static SafenetFactory makeSafenetFactoryMockWithGetFileReturnsSuccess() {
+        SafenetFactory safenetFactory = makeBasicSafenetFactoryMock();
+
+        SafenetFile safenetFile = new SafenetFile();
+        String fileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor" +
+                "incididunt ut labore et dolore magna aliqua.";
+        InputStream stream = new ByteArrayInputStream(fileContent.getBytes(StandardCharsets.UTF_8));
+        safenetFile.setInputStream(stream);
+        safenetFile.setContentLength(3067);
+        safenetFile.setContentRange("bytes 0-3067/3067");
+        safenetFile.setAcceptRanges("bytes");
+        safenetFile.setContentType("image/svg+xml");
+        safenetFile.setCreatedOn(OffsetDateTime.parse("2016-10-04T09:34:44.523Z"));
+        safenetFile.setLastModified(OffsetDateTime.parse("2016-10-05T10:24:24.123Z"));
+
+        GetFile getFile = mock(GetFile.class);
+        when(safenetFactory.makeGetFileCommand(anyString())).thenReturn(getFile);
+        when(getFile.execute()).thenReturn(safenetFile);
 
         return safenetFactory;
     }

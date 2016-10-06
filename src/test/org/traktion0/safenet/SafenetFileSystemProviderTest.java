@@ -7,15 +7,21 @@ import org.traktion0.safenet.filesystem.SafenetPath;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.nio.file.StandardOpenOption;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -164,5 +170,41 @@ public class SafenetFileSystemProviderTest {
         assertEquals(false, basicFileAttributes.isOther());
         assertEquals(false, basicFileAttributes.isSymbolicLink());
         assertEquals(0, basicFileAttributes.size());
+    }
+
+    @Test
+    public void testNewFileChannelReadTextFileReturnsSuccess() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithGetFileReturnsSuccess();
+        env.put("SafenetFactory", safenetFactory);
+
+        ByteBuffer buf = ByteBuffer.allocate(48);
+        int readLength = 0;
+        String firstRead, secondRead, thirdRead;
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            HashSet<StandardOpenOption> options = new HashSet<>();
+            options.add(StandardOpenOption.READ);
+            FileChannel fileChannel = provider.newFileChannel(
+                    new SafenetPath(fileSystem, URI.create("app/file.txt")),
+                    options
+            );
+
+            readLength = fileChannel.read(buf);
+            firstRead = new String(buf.array(), 0, readLength);
+
+            readLength = fileChannel.read(buf);
+            secondRead = new String(buf.array(), 0, readLength);
+
+            readLength = fileChannel.read(buf);
+            thirdRead = new String(buf.array(), 0, readLength);
+        }
+
+        verify(safenetFactory, times(3)).makeGetFileCommand(anyString());
+        verify(safenetFactory.makeGetFileCommand(anyString()), times(3)).execute();
+
+        assertEquals("Lorem ipsum dolor sit amet, consectetur adipisci", firstRead);
+        assertEquals("ng elit, sed do eiusmod temporincididunt ut labo", secondRead);
+        assertEquals("re et dolore magna aliqua.", thirdRead);
     }
 }
