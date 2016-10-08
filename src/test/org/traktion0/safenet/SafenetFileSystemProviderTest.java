@@ -5,26 +5,27 @@ import org.traktion0.safenet.client.commands.SafenetFactory;
 import org.traktion0.safenet.filesystem.SafenetFileSystemProvider;
 import org.traktion0.safenet.filesystem.SafenetPath;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.nio.file.StandardOpenOption;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -175,7 +176,7 @@ public class SafenetFileSystemProviderTest {
     @Test
     public void testNewFileChannelReadTextFileReturnsSuccess() throws IOException {
         Map<String, Object> env = new HashMap<>();
-        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithGetFileReturnsSuccess();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithGetFileReturnsTextSuccess();
         env.put("SafenetFactory", safenetFactory);
 
         ByteBuffer buf = ByteBuffer.allocate(48);
@@ -206,5 +207,95 @@ public class SafenetFileSystemProviderTest {
         assertEquals("Lorem ipsum dolor sit amet, consectetur adipisci", firstRead);
         assertEquals("ng elit, sed do eiusmod temporincididunt ut labo", secondRead);
         assertEquals("re et dolore magna aliqua.", thirdRead);
+    }
+
+    @Test
+    public void testNewFileChannelReadImageFileReturnsSuccess() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithGetFileReturnsImageSuccess();
+        env.put("SafenetFactory", safenetFactory);
+
+        ByteBuffer buf = ByteBuffer.allocate(200000);
+        int readLength = 0;
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            HashSet<StandardOpenOption> options = new HashSet<>();
+            options.add(StandardOpenOption.READ);
+            FileChannel fileChannel = provider.newFileChannel(
+                    new SafenetPath(fileSystem, URI.create("app/image.jpg")),
+                    options
+            );
+
+            readLength = fileChannel.read(buf);
+        }
+
+        verify(safenetFactory, times(1)).makeGetFileCommand(anyString());
+        verify(safenetFactory.makeGetFileCommand(anyString()), times(1)).execute();
+
+        assertEquals(167924, readLength);
+    }
+
+    @Test
+    public void testNewFileChannelWriteTextFileReturnsSuccess() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithCreateFileReturnsSuccess();
+        env.put("SafenetFactory", safenetFactory);
+
+        String fileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor" +
+                "incididunt ut labore et dolore magna aliqua.";
+
+        int writeLength = 0;
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            HashSet<StandardOpenOption> options = new HashSet<>();
+            options.add(StandardOpenOption.WRITE);
+            FileChannel fileChannel = provider.newFileChannel(
+                    new SafenetPath(fileSystem, URI.create("app/file.txt")),
+                    options
+            );
+
+            ByteBuffer byteBuffer = ByteBuffer.wrap(fileContent.getBytes());
+            writeLength = fileChannel.write(byteBuffer);
+        }
+
+        verify(safenetFactory, times(1)).makeCreateFileCommand(anyString(), any(byte[].class));
+        verify(safenetFactory.makeCreateFileCommand(anyString(), any(byte[].class)), times(1)).execute();
+
+        assertEquals(122, writeLength);
+    }
+
+    @Test
+    public void testNewFileChannelWriteImageFileReturnsSuccess() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithCreateFileReturnsSuccess();
+        env.put("SafenetFactory", safenetFactory);
+
+        byte imageFileContent[];
+        File imageFile = new File("src/test/resources/maidsafe_layered_haze.jpg");
+        try (FileInputStream fileInputStream = new FileInputStream(imageFile)) {
+            imageFileContent = new byte[(int)imageFile.length()];
+            fileInputStream.read(imageFileContent);
+        } catch (IOException e) {
+            throw new IOException(e);
+        }
+
+        int writeLength = 0;
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            HashSet<StandardOpenOption> options = new HashSet<>();
+            options.add(StandardOpenOption.WRITE);
+            FileChannel fileChannel = provider.newFileChannel(
+                    new SafenetPath(fileSystem, URI.create("app/image.jpg")),
+                    options
+            );
+
+            ByteBuffer byteBuffer = ByteBuffer.wrap(imageFileContent);
+            writeLength = fileChannel.write(byteBuffer);
+        }
+
+        verify(safenetFactory, times(1)).makeCreateFileCommand(anyString(), any(byte[].class));
+        verify(safenetFactory.makeCreateFileCommand(anyString(), any(byte[].class)), times(1)).execute();
+
+        assertEquals(167924, writeLength);
     }
 }

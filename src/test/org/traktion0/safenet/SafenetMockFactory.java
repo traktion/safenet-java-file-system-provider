@@ -4,15 +4,13 @@ import org.traktion0.safenet.client.beans.Info;
 import org.traktion0.safenet.client.beans.SafenetDirectory;
 import org.traktion0.safenet.client.beans.SafenetFile;
 import org.traktion0.safenet.client.commands.*;
-import sun.misc.IOUtils;
 
 import javax.ws.rs.WebApplicationException;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -93,7 +91,7 @@ public abstract class SafenetMockFactory {
         return safenetFactory;
     }
 
-    public static SafenetFactory makeSafenetFactoryMockWithGetFileReturnsSuccess() {
+    public static SafenetFactory makeSafenetFactoryMockWithGetFileReturnsTextSuccess() {
         SafenetFactory safenetFactory = makeBasicSafenetFactoryMock();
 
         SafenetFile safenetFile = new SafenetFile();
@@ -111,6 +109,42 @@ public abstract class SafenetMockFactory {
         GetFile getFile = mock(GetFile.class);
         when(safenetFactory.makeGetFileCommand(anyString())).thenReturn(getFile);
         when(getFile.execute()).thenReturn(safenetFile);
+
+        return safenetFactory;
+    }
+
+    public static SafenetFactory makeSafenetFactoryMockWithGetFileReturnsImageSuccess() throws IOException {
+        SafenetFactory safenetFactory = makeBasicSafenetFactoryMock();
+
+        try {
+            File imageFile = new File("src/test/resources/maidsafe_layered_haze.jpg");
+            FileInputStream fileInputStream = new FileInputStream(imageFile);
+
+            SafenetFile safenetFile = new SafenetFile();
+            safenetFile.setInputStream(fileInputStream);
+            safenetFile.setContentLength(167924);
+            safenetFile.setContentRange("bytes 0-167924/167924");
+            safenetFile.setAcceptRanges("bytes");
+            safenetFile.setContentType("image/jpg");
+            safenetFile.setCreatedOn(OffsetDateTime.parse("2016-10-08T13:34:44.523Z"));
+            safenetFile.setLastModified(OffsetDateTime.parse("2016-09-13T15:24:24.123Z"));
+
+            GetFile getFile = mock(GetFile.class);
+            when(safenetFactory.makeGetFileCommand(anyString())).thenReturn(getFile);
+            when(getFile.execute()).thenReturn(safenetFile);
+
+            return safenetFactory;
+        } catch (IOException e) {
+            throw new IOException(e);
+        }
+    }
+
+    public static SafenetFactory makeSafenetFactoryMockWithCreateFileReturnsSuccess() {
+        SafenetFactory safenetFactory = makeBasicSafenetFactoryMock();
+
+        CreateFile createFile = mock(CreateFile.class);
+        when(safenetFactory.makeCreateFileCommand(anyString(), any(byte[].class))).thenReturn(createFile);
+        when(createFile.execute()).thenReturn("ok");
 
         return safenetFactory;
     }

@@ -1,5 +1,6 @@
 package org.traktion0.safenet.filesystem;
 
+import com.netflix.hystrix.exception.HystrixRuntimeException;
 import org.traktion0.safenet.client.beans.SafenetDirectory;
 import org.traktion0.safenet.client.beans.SafenetFile;
 import org.traktion0.safenet.client.commands.SafenetBadRequestException;
@@ -17,9 +18,10 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import com.netflix.hystrix.exception.HystrixRuntimeException;
 
 /**
  * Created by paul on 04/09/16.

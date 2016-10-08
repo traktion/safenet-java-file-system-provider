@@ -1,16 +1,5 @@
 package org.traktion0.safenet;
 
-import org.junit.Test;
-
-import java.io.IOException;
-import java.util.*;
-import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.*;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 /**
  * Created by paul on 23/09/16.
  */

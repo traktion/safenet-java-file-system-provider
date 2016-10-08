@@ -57,7 +57,17 @@ public class SafenetFileChannel extends FileChannel {
 
     @Override
     public int write(ByteBuffer byteBuffer) throws IOException {
-        return 0;
+        int bufferLength = byteBuffer.array().length;
+        String pathString = path.normalize().toString();
+
+        String message = safenetFactory.makeCreateFileCommand(pathString, byteBuffer.array()).execute();
+
+        if (message.equals("ok")) {
+            incrementPosition(bufferLength);
+            return bufferLength;
+        } else {
+            return 0;
+        }
     }
 
     @Override

@@ -3,9 +3,9 @@ package org.traktion0.safenet;
 import org.junit.Test;
 import org.traktion0.safenet.filesystem.SafenetFileStore;
 
-import static org.junit.Assert.assertEquals;
-
 import java.net.URI;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by paul on 25/09/16.
