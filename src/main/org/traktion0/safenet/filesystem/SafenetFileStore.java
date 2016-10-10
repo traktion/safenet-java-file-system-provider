@@ -64,7 +64,7 @@ public class SafenetFileStore extends FileStore {
 
     @Override
     public Object getAttribute(String s) throws IOException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
 

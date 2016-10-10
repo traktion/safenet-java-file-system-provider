@@ -10,12 +10,10 @@ import java.net.URI;
 import java.nio.file.*;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 /**
  * Created by paul on 05/09/16.
@@ -69,7 +67,7 @@ public class SafenetFileSystem extends FileSystem {
     @Override
     public Iterable<Path> getRootDirectories() {
         String path = uri.getPath();
-        if (path.equals("")) path = "/";
+        if (path.equals("")) path = getSeparator();
 
         SafenetDirectory rootDirectory = safenetFactory.makeGetDirectoryCommand(path).execute();
         List<Info> subDirectories = rootDirectory.getSubDirectories();
@@ -143,12 +141,12 @@ public class SafenetFileSystem extends FileSystem {
 
     @Override
     public UserPrincipalLookupService getUserPrincipalLookupService() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public WatchService newWatchService() throws IOException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
 
