@@ -1,5 +1,8 @@
 package org.traktion0.safenet.filesystem;
 
+import org.apache.commons.io.FilenameUtils;
+import org.traktion0.safenet.client.beans.Info;
+import org.traktion0.safenet.client.beans.SafenetDirectory;
 import org.traktion0.safenet.client.commands.SafenetFactory;
 
 import java.io.IOException;
@@ -7,7 +10,12 @@ import java.net.URI;
 import java.nio.file.*;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Created by paul on 05/09/16.
@@ -60,12 +68,43 @@ public class SafenetFileSystem extends FileSystem {
 
     @Override
     public Iterable<Path> getRootDirectories() {
-        return null;
+        String path = uri.getPath();
+        if (path.equals("")) path = "/";
+
+        SafenetDirectory rootDirectory = safenetFactory.makeGetDirectoryCommand(path).execute();
+        List<Info> subDirectories = rootDirectory.getSubDirectories();
+        FileSystem fileSystem = provider.getFileSystem(uri);
+
+        return () -> new Iterator<Path>() {
+            private int pos = 0;
+            @Override
+            public boolean hasNext() {
+                return pos < subDirectories.size();
+            }
+
+            @Override
+            public Path next() {
+                return new SafenetPath(fileSystem, URI.create(subDirectories.get(pos++).getName()));
+            }
+        };
     }
 
     @Override
     public Iterable<FileStore> getFileStores() {
-        return null;
+        return () -> new Iterator<FileStore>() {
+            private int pos = 0;
+
+            @Override
+            public boolean hasNext() {
+                return pos < 1;
+            }
+
+            @Override
+            public FileStore next() {
+                pos++;
+                return fileStore;
+            }
+        };
     }
 
     @Override
@@ -85,8 +124,21 @@ public class SafenetFileSystem extends FileSystem {
     }
 
     @Override
-    public PathMatcher getPathMatcher(String s) {
-        return null;
+    public PathMatcher getPathMatcher(String syntaxAndPattern) {
+        if (!syntaxAndPattern.contains(":")) throw new IllegalArgumentException("Syntax/pattern string must contain ':' delimiter.");
+
+        String syntaxStr = syntaxAndPattern.substring(0, syntaxAndPattern.indexOf(":"));
+        String patternStr = syntaxAndPattern.substring(syntaxAndPattern.indexOf(":")+1);
+
+        return path -> {
+            if (syntaxStr.equals("regex")) {
+                Pattern pattern = Pattern.compile(patternStr);
+                return pattern.matcher(path.toString()).matches();
+            } else if (syntaxStr.equals("glob")) {
+                return FilenameUtils.wildcardMatch(path.toString(), patternStr);
+            }
+            throw new IllegalArgumentException("Invalid syntax - regex or glob required.");
+        };
     }
 
     @Override

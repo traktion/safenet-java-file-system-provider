@@ -46,6 +46,7 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.+'
     compile 'com.github.traktion0:safenet-java-client:a56975e8eb0e8819e31ea6193231c56b3680bcc2'
     compile 'commons-lang:commons-lang:2.6'
+    compile 'commons-io:commons-io:2.5'
     //compile 'junit:junit:4.12'
 
     // Declare the dependency for your favourite test framework you want to use in your tests.

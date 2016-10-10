@@ -21,13 +21,15 @@ import java.util.Set;
 public class SafenetFileChannel extends FileChannel {
     private final SafenetFactory safenetFactory;
     private final Path path;
+    private final Set<? extends OpenOption> set;
+
 
     private long position;
 
     public SafenetFileChannel(SafenetFactory safenetFactory, Path path, Set<? extends OpenOption> set, FileAttribute<?>... fileAttributes) {
         this.safenetFactory = safenetFactory;
         this.path = path;
-
+        this.set = set;
         this.position = 0;
     }
 

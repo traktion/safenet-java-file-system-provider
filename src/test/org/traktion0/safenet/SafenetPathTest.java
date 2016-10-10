@@ -21,7 +21,7 @@ import static org.junit.Assert.*;
  */
 public class SafenetPathTest {
 
-    private static final String URI_HOST_STRING = "safe://traktion0/";
+    private static final String URI_HOST_STRING = "safe://localhost/";
     private FileSystem fileSystem;
 
     @Before

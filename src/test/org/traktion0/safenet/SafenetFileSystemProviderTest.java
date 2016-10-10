@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verify;
  */
 public class SafenetFileSystemProviderTest {
 
-    private static final String URI_HOST_STRING = "safe://traktion0/";
+    private static final String URI_HOST_STRING = "safe://localhost/";
 
     @Test
     public void testNewFileSystemFromFileSystems() throws IOException {

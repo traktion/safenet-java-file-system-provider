@@ -12,14 +12,14 @@ import static org.junit.Assert.assertEquals;
  */
 public class SafenetFileStoreTest {
 
-    private static final String TEST_URI_PATH = "safe://traktion0/testdir/testfile.txt";
+    private static final String TEST_URI_PATH = "safe://localhost/testdir/testfile.txt";
 
     @Test
     public void testNameWithAbsoluteURI() {
         URI uri = URI.create(TEST_URI_PATH);
         SafenetFileStore safenetFileStore = new SafenetFileStore(uri);
 
-        assertEquals("safe://traktion0", safenetFileStore.name());
+        assertEquals("safe://localhost", safenetFileStore.name());
     }
 
     @Test

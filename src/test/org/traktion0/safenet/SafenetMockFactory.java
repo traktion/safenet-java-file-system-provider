@@ -9,6 +9,8 @@ import javax.ws.rs.WebApplicationException;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -19,6 +21,7 @@ import static org.mockito.Mockito.when;
  * Created by paul on 04/10/16.
  */
 public abstract class SafenetMockFactory {
+
     public static SafenetFactory makeBasicSafenetFactoryMock() {
         // PG: Note that closing a FileSystem attempts to delete an auth token, so mock this
         DeleteAuthToken deleteAuthToken = mock(DeleteAuthToken.class);
@@ -145,6 +148,27 @@ public abstract class SafenetMockFactory {
         CreateFile createFile = mock(CreateFile.class);
         when(safenetFactory.makeCreateFileCommand(anyString(), any(byte[].class))).thenReturn(createFile);
         when(createFile.execute()).thenReturn("ok");
+
+        return safenetFactory;
+    }
+
+    public static SafenetFactory makeSafenetFactoryMockWithGetDirectoryReturnsRootDirectories() {
+        SafenetFactory safenetFactory = makeBasicSafenetFactoryMock();
+
+        GetDirectory getDirectory = mock(GetDirectory.class);
+        SafenetDirectory safenetDirectory = new SafenetDirectory();
+
+        List<Info> rootDirectories = new ArrayList<>();
+        Info app = new Info();
+        app.setName("app");
+        rootDirectories.add(app);
+        Info drive = new Info();
+        drive.setName("drive");
+        rootDirectories.add(drive);
+
+        safenetDirectory.setSubDirectories(rootDirectories);
+        when(safenetFactory.makeGetDirectoryCommand(anyString())).thenReturn(getDirectory);
+        when(getDirectory.execute()).thenReturn(safenetDirectory);
 
         return safenetFactory;
     }
