@@ -129,8 +129,12 @@ public class SafenetPath implements Path {
         String[] nameParts = getNameParts();
         Deque<String> newNameParts = new ArrayDeque<>();
         for (String part: nameParts) {
-            if (part.equals("..") && newNameParts.size() > 0) {
+            if (part.equals("") && newNameParts.size() > 0) {
                 newNameParts.removeLast();
+            } if (part.equals("..")) {
+                if (newNameParts.size() > 0) {
+                    newNameParts.removeLast();
+                }
             } else {
                 newNameParts.add(part);
             }
