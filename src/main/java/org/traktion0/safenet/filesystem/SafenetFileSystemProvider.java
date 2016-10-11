@@ -213,7 +213,7 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> aClass, LinkOption... linkOptions) throws IOException {
-        String pathString = path.normalize().toString();
+        String pathString = path.toString();
         try {
             // PG:TODO: Factory this out
             try {
