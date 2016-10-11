@@ -37,10 +37,10 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public FileSystem newFileSystem(URI uri, Map<String, ?> map) throws IOException {
-        URI uriHost = getUriHostOnly(uri);
+        //URI uriHost = getUriHostOnly(uri);
 
         synchronized (fileSystems) {
-            if (fileSystems.containsKey(uriHost) && fileSystems.get(uriHost).isOpen()) {
+            if (fileSystems.containsKey(uri) && fileSystems.get(uri).isOpen()) {
                 throw new FileSystemAlreadyExistsException();
             }
 
@@ -50,8 +50,8 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
                 throw new IOException("Required SafenetFactory not provided.");
             }
 
-            FileSystem fs = new SafenetFileSystem(this, uriHost, safenetFactory);
-            fileSystems.put(uriHost, fs);
+            FileSystem fs = new SafenetFileSystem(this, uri, safenetFactory);
+            fileSystems.put(uri, fs);
 
             return fs;
         }
@@ -213,7 +213,7 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> aClass, LinkOption... linkOptions) throws IOException {
-        String pathString = path.toString();
+        String pathString = path.normalize().toString();
         try {
             // PG:TODO: Factory this out
             try {
