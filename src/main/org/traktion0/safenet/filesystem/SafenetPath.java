@@ -9,6 +9,7 @@ import java.nio.file.*;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * Created by paul on 05/09/16.
@@ -41,10 +42,10 @@ public class SafenetPath implements Path {
 
     @Override
     public Path getFileName() {
-        String pathString = uri.getPath();
+        String pathString = StringUtils.stripEnd(uri.getPath(), fileSystem.getSeparator());
         URI fileUri;
-        if (pathString.indexOf(fileSystem.getSeparator()) != -1) {
-            fileUri = URI.create(pathString.substring(pathString.lastIndexOf(fileSystem.getSeparator())));
+        if (pathString.contains(fileSystem.getSeparator())) {
+            fileUri = URI.create(pathString.substring(pathString.lastIndexOf(fileSystem.getSeparator())+1));
         } else {
             fileUri = URI.create(pathString);
         }
@@ -156,7 +157,13 @@ public class SafenetPath implements Path {
     public Path resolve(Path otherPath) {
         if (otherPath.isAbsolute()) return otherPath.normalize();
 
-        return new SafenetPath(fileSystem, URI.create(uri.getPath() + fileSystem.getSeparator() + otherPath.toString())).normalize();
+        String pathPrefix;
+        if (!uri.getPath().equals(fileSystem.getSeparator())) {
+            pathPrefix = uri.getPath() + fileSystem.getSeparator();
+        } else {
+            pathPrefix = fileSystem.getSeparator();
+        }
+        return new SafenetPath(fileSystem, URI.create(pathPrefix + otherPath.toString())).normalize();
     }
 
     @Override
@@ -251,6 +258,9 @@ public class SafenetPath implements Path {
 
             @Override
             public Path next() {
+                if (pos >= getNameCount()) {
+                    throw new NoSuchElementException();
+                }
                 URI uri = URI.create(pathParts[pos]);
                 pos++;
                 return new SafenetPath(fileSystem, uri);

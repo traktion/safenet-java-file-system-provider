@@ -1,6 +1,7 @@
 package org.traktion0.safenet.filesystem;
 
 import com.netflix.hystrix.exception.HystrixRuntimeException;
+import org.traktion0.safenet.client.beans.Info;
 import org.traktion0.safenet.client.beans.SafenetDirectory;
 import org.traktion0.safenet.client.beans.SafenetFile;
 import org.traktion0.safenet.client.commands.SafenetBadRequestException;
@@ -18,9 +19,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -87,50 +86,54 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public DirectoryStream<Path> newDirectoryStream(Path path, DirectoryStream.Filter<? super Path> filter) throws IOException {
-        return null;
-        /*SafenetFileSystem fs = (SafenetFileSystem) path.getFileSystem();
-        try (
-                final FtpAgent agent = queue.getAgent();
-        ) {
-            final String absPath = path.toRealPath().toString();
-            final Iterator<String> names
-                    = agent.getDirectoryNames(absPath).iterator();
-            return new DirectoryStream<Path>()
-            {
-                @Override
-                public Iterator<Path> iterator()
-                {
-                    return new Iterator<Path>()
-                    {
-                        @Override
-                        public boolean hasNext()
-                        {
-                            return names.hasNext();
-                        }
+        SafenetFileSystem fs = (SafenetFileSystem) path.getFileSystem();
+        SafenetDirectory safenetDirectory = safenetFactory.makeGetDirectoryCommand(path.toString()).execute();
 
-                        @Override
-                        public Path next()
-                        {
-                            if (!hasNext())
-                                throw new NoSuchElementException();
-                            return fs.getPath(names.next());
-                        }
+        List<Path> filesAndSubdirectories = new ArrayList<>();
+        for (Info info: safenetDirectory.getSubDirectories()){
+            filesAndSubdirectories.add(resolveInfoToPath(path, info));
+        }
+        for (Info info: safenetDirectory.getFiles()){
+            filesAndSubdirectories.add(resolveInfoToPath(path, info));
+        }
 
-                        @Override
-                        public void remove()
-                        {
-                            throw new UnsupportedOperationException();
-                        }
-                    };
-                }
+        return new DirectoryStream<Path>() {
+            @Override
+            public Iterator<Path> iterator() {
+                return new Iterator<Path>() {
+                    private int pos = 0;
+                    private Path nextPath;
 
-                @Override
-                public void close()
-                        throws IOException
-                {
-                }
-            };
-        }*/
+                    @Override
+                    public boolean hasNext() {
+                        if (pos < filesAndSubdirectories.size()) {
+                            nextPath = filesAndSubdirectories.get(pos);
+                            return true;
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public Path next() {
+                        if (pos >= filesAndSubdirectories.size()) {
+                            throw new NoSuchElementException();
+                        }
+                        pos++;
+                        return nextPath;
+                    }
+                };
+            }
+
+            @Override
+            public void close() throws IOException {
+                // PG:TODO: This may need implementing
+            }
+        };
+    }
+
+    private Path resolveInfoToPath(Path path, Info info) {
+        String pathString = path.resolve(info.getName()).toString();
+        return new SafenetPath(path.getFileSystem(), URI.create(pathString));
     }
 
     @Override

@@ -87,6 +87,24 @@ public abstract class SafenetMockFactory {
         info.setModifiedOn(1475701221);
         safenetDirectory.setInfo(info);
 
+        Info subDir1 = new Info();
+        subDir1.setName("subdir1");
+        Info subDir2 = new Info();
+        subDir2.setName("subdir2");
+        Info file1 = new Info();
+        file1.setName("file1.txt");
+        Info file2 = new Info();
+        file2.setName("file2.jpg");
+        List<Info> subDirectories = new ArrayList<>();
+        subDirectories.add(subDir1);
+        subDirectories.add(subDir2);
+        List<Info> files = new ArrayList<>();
+        files.add(file1);
+        files.add(file2);
+
+        safenetDirectory.setSubDirectories(subDirectories);
+        safenetDirectory.setFiles(files);
+
         GetDirectory getDirectory = mock(GetDirectory.class);
         when(safenetFactory.makeGetDirectoryCommand(anyString())).thenReturn(getDirectory);
         when(getDirectory.execute()).thenReturn(safenetDirectory);

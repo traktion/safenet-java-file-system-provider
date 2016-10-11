@@ -448,4 +448,32 @@ public class SafenetPathTest {
 
         assertEquals("Relativized path is invalid", "testsubdir2/testfile.txt", basePath.relativize(extraPath).toString());
     }
+
+    @Test
+    public void testGetFileNameRootFileReturnsSuccess() {
+        Path path1 = new SafenetPath(fileSystem, URI.create(URI_HOST_STRING + "testdir.txt"));
+
+        assertEquals("Filename has incorrect format", path1.getFileName().toString(), "testdir.txt");
+    }
+
+    @Test
+    public void testGetFileNameSubDirectoryFileReturnsSuccess() {
+        Path path1 = new SafenetPath(fileSystem, URI.create(URI_HOST_STRING + "/testdir/testdir.txt"));
+
+        assertEquals("Filename has incorrect format", path1.getFileName().toString(), "testdir.txt");
+    }
+
+    @Test
+    public void testGetFileNameSubSubDirectoryFileReturnsSuccess() {
+        Path path1 = new SafenetPath(fileSystem, URI.create(URI_HOST_STRING + "/testdir/testsub/testdir.txt"));
+
+        assertEquals("Filename has incorrect format", path1.getFileName().toString(), "testdir.txt");
+    }
+
+    @Test
+    public void testGetFileNameDirectoryWithTrailingSlashReturnsSuccess() {
+        Path path1 = new SafenetPath(fileSystem, URI.create(URI_HOST_STRING + "/testdir/"));
+
+        assertEquals("Filename has incorrect format", path1.getFileName().toString(), "testdir");
+    }
 }

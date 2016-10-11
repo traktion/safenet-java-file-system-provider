@@ -12,6 +12,7 @@ import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -82,6 +83,9 @@ public class SafenetFileSystem extends FileSystem {
 
             @Override
             public Path next() {
+                if (pos >= subDirectories.size()) {
+                    throw new NoSuchElementException();
+                }
                 return new SafenetPath(fileSystem, URI.create(subDirectories.get(pos++).getName()));
             }
         };
@@ -99,6 +103,9 @@ public class SafenetFileSystem extends FileSystem {
 
             @Override
             public FileStore next() {
+                if (pos >= 1) {
+                    throw new NoSuchElementException();
+                }
                 pos++;
                 return fileStore;
             }

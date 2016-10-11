@@ -11,10 +11,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
@@ -297,5 +294,42 @@ public class SafenetFileSystemProviderTest {
         verify(safenetFactory.makeCreateFileCommand(anyString(), any(byte[].class)), times(1)).execute();
 
         assertEquals(167924, writeLength);
+    }
+
+    @Test
+    public void testNewDirectoryStreamReturnsSuccess() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithGetDirectoryReturnsSuccess();
+        env.put("SafenetFactory", safenetFactory);
+
+        /*DirectoryStream.Filter<Path> filter =
+                path -> {
+                    try {
+                        return (Files.isDirectory(path));
+                    } catch (IOException x) {
+                        // Failed to determine if it's a directory.
+                        System.err.println(x);
+                        return false;
+                    }
+                };*/
+
+        DirectoryStream.Filter<Path> filter =
+                path -> true;
+
+        String contentString = "";
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            Path path = new SafenetPath(fileSystem, URI.create("/"));
+            DirectoryStream<Path> directoryStream = provider.newDirectoryStream(path, filter);
+
+            for(Path subPath: directoryStream) {
+                contentString += subPath.getFileName() + ":";
+            }
+        }
+
+        verify(safenetFactory, times(1)).makeGetDirectoryCommand(anyString());
+        verify(safenetFactory.makeGetDirectoryCommand(anyString()), times(1)).execute();
+
+        assertEquals("Directory contents path mismatches", "subdir1:subdir2:file1.txt:file2.jpg:", contentString);
     }
 }
