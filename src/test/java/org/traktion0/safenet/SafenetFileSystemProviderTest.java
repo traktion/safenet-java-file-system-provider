@@ -95,7 +95,7 @@ public class SafenetFileSystemProviderTest {
 
         SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
         try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
-            Path path = new SafenetPath(fileSystem, URI.create("app/filesystemdir"));
+            Path path = new SafenetPath(fileSystem, URI.create("filesystemdir"));
             provider.createDirectory(path);
         }
 
@@ -111,7 +111,7 @@ public class SafenetFileSystemProviderTest {
 
         SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
         try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
-            Path path = new SafenetPath(fileSystem, URI.create("app/filesystemdir"));
+            Path path = new SafenetPath(fileSystem, URI.create("filesystemdir"));
             provider.createDirectory(path);
         }
     }
@@ -126,7 +126,7 @@ public class SafenetFileSystemProviderTest {
         SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
         try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
             basicFileAttributes = provider.readAttributes(
-                    new SafenetPath(fileSystem, URI.create("app/file.txt")),
+                    new SafenetPath(fileSystem, URI.create("file.txt")),
                     BasicFileAttributes.class
             );
         }
@@ -153,7 +153,7 @@ public class SafenetFileSystemProviderTest {
         SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
         try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
             basicFileAttributes = provider.readAttributes(
-                    new SafenetPath(fileSystem, URI.create("app/directory")),
+                    new SafenetPath(fileSystem, URI.create("directory")),
                     BasicFileAttributes.class
             );
         }
@@ -184,7 +184,7 @@ public class SafenetFileSystemProviderTest {
             HashSet<StandardOpenOption> options = new HashSet<>();
             options.add(StandardOpenOption.READ);
             FileChannel fileChannel = provider.newFileChannel(
-                    new SafenetPath(fileSystem, URI.create("app/file.txt")),
+                    new SafenetPath(fileSystem, URI.create("file.txt")),
                     options
             );
 
@@ -219,7 +219,7 @@ public class SafenetFileSystemProviderTest {
             HashSet<StandardOpenOption> options = new HashSet<>();
             options.add(StandardOpenOption.READ);
             FileChannel fileChannel = provider.newFileChannel(
-                    new SafenetPath(fileSystem, URI.create("app/image.jpg")),
+                    new SafenetPath(fileSystem, URI.create("image.jpg")),
                     options
             );
 
@@ -247,7 +247,7 @@ public class SafenetFileSystemProviderTest {
             HashSet<StandardOpenOption> options = new HashSet<>();
             options.add(StandardOpenOption.WRITE);
             FileChannel fileChannel = provider.newFileChannel(
-                    new SafenetPath(fileSystem, URI.create("app/file.txt")),
+                    new SafenetPath(fileSystem, URI.create("file.txt")),
                     options
             );
 
@@ -282,7 +282,7 @@ public class SafenetFileSystemProviderTest {
             HashSet<StandardOpenOption> options = new HashSet<>();
             options.add(StandardOpenOption.WRITE);
             FileChannel fileChannel = provider.newFileChannel(
-                    new SafenetPath(fileSystem, URI.create("app/image.jpg")),
+                    new SafenetPath(fileSystem, URI.create("image.jpg")),
                     options
             );
 

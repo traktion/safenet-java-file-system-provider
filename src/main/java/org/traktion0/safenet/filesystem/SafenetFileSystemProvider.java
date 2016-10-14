@@ -37,7 +37,6 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public FileSystem newFileSystem(URI uri, Map<String, ?> map) throws IOException {
-        //URI uriHost = getUriHostOnly(uri);
 
         synchronized (fileSystems) {
             if (fileSystems.containsKey(uri) && fileSystems.get(uri).isOpen()) {
@@ -57,16 +56,11 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
         }
     }
 
-    private URI getUriHostOnly(URI uri) {
-        return URI.create(uri.getScheme() + "://" + uri.getHost());
-    }
-
     @Override
     public FileSystem getFileSystem(URI uri) {
-        URI uriHost = getUriHostOnly(uri);
 
         synchronized (fileSystems) {
-            FileSystem fs = fileSystems.get(uriHost);
+            FileSystem fs = fileSystems.get(uri);
             if (fs == null || !fs.isOpen())
                 throw new FileSystemNotFoundException();
 

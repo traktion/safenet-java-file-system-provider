@@ -19,7 +19,7 @@ public class SafenetFileStore extends FileStore {
 
     @Override
     public String name() {
-        return uri.getScheme() + "://" + uri.getHost();
+        return uri.toString();
     }
 
     @Override

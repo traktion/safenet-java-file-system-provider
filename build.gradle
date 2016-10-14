@@ -24,7 +24,7 @@ repositories {
 dependencies {
     // The production code uses the SLF4J logging API at compile time
     compile 'org.slf4j:slf4j-api:1.7.+'
-    compile 'com.github.traktion0:safenet-java-client:a56975e8eb0e8819e31ea6193231c56b3680bcc2'
+    compile 'com.github.traktion0:safenet-java-client:c1103ec9baa6acf46a9bb9d91e3cc60b04f64eaa'
     compile 'commons-lang:commons-lang:2.6'
     compile 'commons-io:commons-io:2.5'
     //compile 'junit:junit:4.12'

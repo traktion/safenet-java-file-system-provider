@@ -150,7 +150,7 @@ public class SafenetPathTest {
     public void testGetNameWithAbsolutePathAndOverrunIndexReturnException() throws IOException {
         Path path = new SafenetPath(fileSystem, URI.create(URI_HOST_STRING + "testdir/testsubdir/testfile.txt"));
 
-        assertTrue("Get name fails to throw an exception when out of bounds", path.getName(4).isAbsolute());
+        assertTrue("Get name fails to throw an exception when out of bounds", path.getName(5).isAbsolute());
     }
 
     @Test

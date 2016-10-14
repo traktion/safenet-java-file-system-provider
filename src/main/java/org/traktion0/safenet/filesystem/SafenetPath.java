@@ -19,9 +19,9 @@ public class SafenetPath implements Path {
     private final FileSystem fileSystem;
     private final URI uri;
 
-    public SafenetPath(FileSystem safenetFs, URI uri)
+    public SafenetPath(FileSystem fileSystem, URI uri)
     {
-        this.fileSystem = safenetFs;
+        this.fileSystem = fileSystem;
         this.uri = uri;
     }
 

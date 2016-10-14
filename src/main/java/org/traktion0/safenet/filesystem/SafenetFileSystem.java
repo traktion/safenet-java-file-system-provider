@@ -72,7 +72,7 @@ public class SafenetFileSystem extends FileSystem {
 
         SafenetDirectory rootDirectory = safenetFactory.makeGetDirectoryCommand(path).execute();
         List<Info> subDirectories = rootDirectory.getSubDirectories();
-        FileSystem fileSystem = provider.getFileSystem(uri);
+        FileSystem fileSystem = this;
 
         return () -> new Iterator<Path>() {
             private int pos = 0;
@@ -124,8 +124,8 @@ public class SafenetFileSystem extends FileSystem {
             fullPath += getSeparator() + pathPart;
         }
 
-        URI uri = URI.create(fullPath);
-        return new SafenetPath(this, uri);
+        URI pathUri = URI.create(fullPath);
+        return new SafenetPath(this, pathUri);
     }
 
     @Override

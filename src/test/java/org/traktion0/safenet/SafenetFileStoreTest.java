@@ -19,7 +19,7 @@ public class SafenetFileStoreTest {
         URI uri = URI.create(TEST_URI_PATH);
         SafenetFileStore safenetFileStore = new SafenetFileStore(uri);
 
-        assertEquals("safe://localhost", safenetFileStore.name());
+        assertEquals(TEST_URI_PATH, safenetFileStore.name());
     }
 
     @Test
