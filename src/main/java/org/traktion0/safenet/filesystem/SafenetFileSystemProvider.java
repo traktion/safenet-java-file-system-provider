@@ -80,49 +80,52 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public DirectoryStream<Path> newDirectoryStream(Path path, DirectoryStream.Filter<? super Path> filter) throws IOException {
-        SafenetFileSystem fs = (SafenetFileSystem) path.getFileSystem();
-        SafenetDirectory safenetDirectory = safenetFactory.makeGetDirectoryCommand(path.toString()).execute();
+        try {
+            SafenetDirectory safenetDirectory = safenetFactory.makeGetDirectoryCommand(path.toString()).execute();
 
-        List<Path> filesAndSubdirectories = new ArrayList<>();
-        for (Info info: safenetDirectory.getSubDirectories()){
-            filesAndSubdirectories.add(resolveInfoToPath(path, info));
-        }
-        for (Info info: safenetDirectory.getFiles()){
-            filesAndSubdirectories.add(resolveInfoToPath(path, info));
-        }
-
-        return new DirectoryStream<Path>() {
-            @Override
-            public Iterator<Path> iterator() {
-                return new Iterator<Path>() {
-                    private int pos = 0;
-                    private Path nextPath;
-
-                    @Override
-                    public boolean hasNext() {
-                        if (pos < filesAndSubdirectories.size()) {
-                            nextPath = filesAndSubdirectories.get(pos);
-                            return true;
-                        }
-                        return false;
-                    }
-
-                    @Override
-                    public Path next() {
-                        if (pos >= filesAndSubdirectories.size()) {
-                            throw new NoSuchElementException();
-                        }
-                        pos++;
-                        return nextPath;
-                    }
-                };
+            List<Path> filesAndSubdirectories = new ArrayList<>();
+            for (Info info: safenetDirectory.getSubDirectories()){
+                filesAndSubdirectories.add(resolveInfoToPath(path, info));
+            }
+            for (Info info: safenetDirectory.getFiles()){
+                filesAndSubdirectories.add(resolveInfoToPath(path, info));
             }
 
-            @Override
-            public void close() throws IOException {
-                // PG:TODO: This may need implementing
-            }
-        };
+            return new DirectoryStream<Path>() {
+                @Override
+                public Iterator<Path> iterator() {
+                    return new Iterator<Path>() {
+                        private int pos = 0;
+                        private Path nextPath;
+
+                        @Override
+                        public boolean hasNext() {
+                            if (pos < filesAndSubdirectories.size()) {
+                                nextPath = filesAndSubdirectories.get(pos);
+                                return true;
+                            }
+                            return false;
+                        }
+
+                        @Override
+                        public Path next() {
+                            if (pos >= filesAndSubdirectories.size()) {
+                                throw new NoSuchElementException();
+                            }
+                            pos++;
+                            return nextPath;
+                        }
+                    };
+                }
+
+                @Override
+                public void close() throws IOException {
+                    // PG:TODO: This may need implementing
+                }
+            };
+        } catch(HystrixRuntimeException | SafenetBadRequestException e) {
+            throw new IOException("Get directory '" + path.toString() + "' failed.", e);
+        }
     }
 
     private Path resolveInfoToPath(Path path, Info info) {
@@ -228,7 +231,7 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
                 }
             }
         } catch(HystrixRuntimeException | SafenetBadRequestException e) {
-            throw new IOException("Get File/Directory Attributes '" + pathString + "' failed.", e);
+            throw new IOException("Get file/directory attributes for '" + pathString + "' failed.", e);
         }
     }
 

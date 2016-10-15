@@ -1,8 +1,10 @@
 package org.traktion0.safenet.filesystem;
 
+import com.netflix.hystrix.exception.HystrixRuntimeException;
 import org.apache.commons.io.FilenameUtils;
 import org.traktion0.safenet.client.beans.Info;
 import org.traktion0.safenet.client.beans.SafenetDirectory;
+import org.traktion0.safenet.client.commands.SafenetBadRequestException;
 import org.traktion0.safenet.client.commands.SafenetFactory;
 
 import java.io.IOException;
@@ -44,10 +46,13 @@ public class SafenetFileSystem extends FileSystem {
 
     @Override
     public void close() throws IOException {
-        if (safenetFactory != null) {
-            safenetFactory.makeDeleteAuthTokenCommand().execute();
+        try {
+            if (safenetFactory != null) safenetFactory.makeDeleteAuthTokenCommand().execute();
+        } catch(HystrixRuntimeException | SafenetBadRequestException e) {
+            throw new IOException("Delete auth token failed.", e);
+        } finally {
+            isOpen = false;
         }
-        isOpen = false;
     }
 
     @Override
@@ -70,25 +75,40 @@ public class SafenetFileSystem extends FileSystem {
         String path = uri.getPath();
         if (path.equals("")) path = getSeparator();
 
-        SafenetDirectory rootDirectory = safenetFactory.makeGetDirectoryCommand(path).execute();
-        List<Info> subDirectories = rootDirectory.getSubDirectories();
-        FileSystem fileSystem = this;
+        try {
+            SafenetDirectory rootDirectory = safenetFactory.makeGetDirectoryCommand(path).execute();
+            List<Info> subDirectories = rootDirectory.getSubDirectories();
+            FileSystem fileSystem = this;
 
-        return () -> new Iterator<Path>() {
-            private int pos = 0;
-            @Override
-            public boolean hasNext() {
-                return pos < subDirectories.size();
-            }
+            return () -> new Iterator<Path>() {
+                private int pos = 0;
+                @Override
+                public boolean hasNext() {
+                    return pos < subDirectories.size();
+                }
 
-            @Override
-            public Path next() {
-                if (pos >= subDirectories.size()) {
+                @Override
+                public Path next() {
+                    if (pos >= subDirectories.size()) {
+                        throw new NoSuchElementException();
+                    }
+                    return new SafenetPath(fileSystem, URI.create(subDirectories.get(pos++).getName()));
+                }
+            };
+        } catch(HystrixRuntimeException | SafenetBadRequestException e) {
+            // PG: Return an empty iterator
+            return () -> new Iterator<Path>() {
+                @Override
+                public boolean hasNext() {
+                    return false;
+                }
+
+                @Override
+                public Path next() {
                     throw new NoSuchElementException();
                 }
-                return new SafenetPath(fileSystem, URI.create(subDirectories.get(pos++).getName()));
-            }
-        };
+            };
+        }
     }
 
     @Override

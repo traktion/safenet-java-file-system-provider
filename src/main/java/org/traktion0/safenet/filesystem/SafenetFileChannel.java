@@ -1,6 +1,8 @@
 package org.traktion0.safenet.filesystem;
 
+import com.netflix.hystrix.exception.HystrixRuntimeException;
 import org.traktion0.safenet.client.beans.SafenetFile;
+import org.traktion0.safenet.client.commands.SafenetBadRequestException;
 import org.traktion0.safenet.client.commands.SafenetFactory;
 
 import java.io.IOException;
@@ -37,15 +39,19 @@ public class SafenetFileChannel extends FileChannel {
     public int read(ByteBuffer byteBuffer) throws IOException {
         int bufferLength = byteBuffer.array().length;
         String pathString = path.normalize().toString() + String.format("?offset=%1$s&length=%2$s", position, bufferLength);
-        SafenetFile safenetFile = safenetFactory.makeGetFileCommand(pathString).execute();
+        try {
+            SafenetFile safenetFile = safenetFactory.makeGetFileCommand(pathString).execute();
 
-        byte[] buf = new byte[bufferLength];
-        int bytesRead = safenetFile.getInputStream().read(buf);
-        byteBuffer.clear();
-        byteBuffer.put(buf);
-        incrementPosition(bytesRead);
+            byte[] buf = new byte[bufferLength];
+            int bytesRead = safenetFile.getInputStream().read(buf);
+            byteBuffer.clear();
+            byteBuffer.put(buf);
+            incrementPosition(bytesRead);
 
-        return bytesRead;
+            return bytesRead;
+        } catch(HystrixRuntimeException | SafenetBadRequestException e) {
+            throw new IOException("Get file '" + pathString + "' failed.", e);
+        }
     }
 
     private void incrementPosition(long increment) {
@@ -62,13 +68,17 @@ public class SafenetFileChannel extends FileChannel {
         int bufferLength = byteBuffer.array().length;
         String pathString = path.normalize().toString();
 
-        String message = safenetFactory.makeCreateFileCommand(pathString, byteBuffer.array()).execute();
+        try {
+            String message = safenetFactory.makeCreateFileCommand(pathString, byteBuffer.array()).execute();
 
-        if (message.equals("ok")) {
-            incrementPosition(bufferLength);
-            return bufferLength;
-        } else {
-            return 0;
+            if (message.equals("ok")) {
+                incrementPosition(bufferLength);
+                return bufferLength;
+            } else {
+                return 0;
+            }
+        } catch(HystrixRuntimeException | SafenetBadRequestException e) {
+            throw new IOException("Create file '" + pathString + "' failed.", e);
         }
     }
 
