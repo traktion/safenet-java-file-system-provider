@@ -5,13 +5,12 @@ import org.traktion0.safenet.client.commands.SafenetFactory;
 import org.traktion0.safenet.filesystem.SafenetFileSystemProvider;
 import org.traktion0.safenet.filesystem.SafenetPath;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
+import java.nio.file.FileSystem;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
@@ -64,11 +63,30 @@ public class SafenetFileSystemProviderTest {
         try (FileSystem fileSystem = FileSystems.newFileSystem(uri, env)) {
             FileSystem existingFileSystem = FileSystems.getFileSystem(uri);
             className = existingFileSystem.getClass().getName();
-            isOpen = fileSystem.isOpen();
+            isOpen = existingFileSystem.isOpen();
         }
 
         assertEquals("Provider return unexected type", "org.traktion0.safenet.filesystem.SafenetFileSystem", className);
         assertTrue("Provider return a closed filesystem", isOpen);
+    }
+
+    @Test
+    public void testNewFileSystemFromPathReturnsSuccess() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithCreateDirectoryReturnsSuccess();
+        env.put("SafenetFactory", safenetFactory);
+
+        String className;
+        boolean isOpen;
+
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            FileSystem fileSystem2 = provider.newFileSystem(Paths.get("/"), env);
+            className = fileSystem2.getClass().getName();
+            isOpen = fileSystem2.isOpen();
+        }
+
+        assertTrue("Provider failed to return an open filesystem from a path", isOpen);
     }
 
     @Test
@@ -262,6 +280,40 @@ public class SafenetFileSystemProviderTest {
     }
 
     @Test
+    public void testNewFileChannelWriteTextFileFromByteBufferArrayReturnsSuccess() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithCreateFileReturnsSuccess();
+        env.put("SafenetFactory", safenetFactory);
+
+        String fileContent = "Lorem ipsum dolor sit amet, ";
+        String fileContent2 = "consectetur adipiscing elit, sed do eiusmod tempor";
+        String fileContent3 = "incididunt ut labore et dolore magna aliqua.";
+
+        long writeLength = 0;
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            HashSet<StandardOpenOption> options = new HashSet<>();
+            options.add(StandardOpenOption.WRITE);
+            FileChannel fileChannel = provider.newFileChannel(
+                    new SafenetPath(fileSystem, URI.create("file.txt")),
+                    options
+            );
+
+            ByteBuffer[] byteBuffers = {
+                    ByteBuffer.wrap(fileContent.getBytes()),
+                    ByteBuffer.wrap(fileContent2.getBytes()),
+                    ByteBuffer.wrap(fileContent3.getBytes())
+            };
+            writeLength = fileChannel.write(byteBuffers, 1, 2);
+        }
+
+        verify(safenetFactory, times(1)).makeCreateFileCommand(anyString(), any(byte[].class));
+        verify(safenetFactory.makeCreateFileCommand(anyString(), any(byte[].class)), times(1)).execute();
+
+        assertEquals(94, writeLength);
+    }
+
+    @Test
     public void testNewFileChannelWriteImageFileReturnsSuccess() throws IOException {
         Map<String, Object> env = new HashMap<>();
         SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithCreateFileReturnsSuccess();
@@ -331,5 +383,48 @@ public class SafenetFileSystemProviderTest {
         verify(safenetFactory.makeGetDirectoryCommand(anyString()), times(1)).execute();
 
         assertEquals("Directory contents path mismatches", "subdir1:subdir2:file1.txt:file2.jpg:", contentString);
+    }
+
+    @Test
+    public void testNewInputStreamReturnsSuccess() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithGetFileReturnsTextSuccess();
+        env.put("SafenetFactory", safenetFactory);
+
+        String readContent = "";
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            Path filePath = new SafenetPath(fileSystem, URI.create("file1.txt"));
+            try (InputStream inputStream = provider.newInputStream(filePath)) {
+                byte[] buf = new byte[48];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buf)) != -1) {
+                    readContent += new String(buf, 0, bytesRead);
+                }
+            }
+        }
+
+        String expected = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor" +
+                "incididunt ut labore et dolore magna aliqua.";
+        assertEquals(expected, readContent);
+    }
+
+    @Test
+    public void testNewOutputStreamlWriteTextFileReturnsSuccess() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithCreateFileReturnsSuccess();
+        env.put("SafenetFactory", safenetFactory);
+
+        String fileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor" +
+                "incididunt ut labore et dolore magna aliqua.";
+
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            Path filePath = new SafenetPath(fileSystem, URI.create("file1.txt"));
+            OutputStream outputStream = provider.newOutputStream(filePath);
+            outputStream.write(fileContent.getBytes());
+        }
+
+        //assertNoException
     }
 }

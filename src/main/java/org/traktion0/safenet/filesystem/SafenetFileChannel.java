@@ -37,21 +37,9 @@ public class SafenetFileChannel extends FileChannel {
 
     @Override
     public int read(ByteBuffer byteBuffer) throws IOException {
-        int bufferLength = byteBuffer.array().length;
-        String pathString = path.normalize().toString() + String.format("?offset=%1$s&length=%2$s", position, bufferLength);
-        try {
-            SafenetFile safenetFile = safenetFactory.makeGetFileCommand(pathString).execute();
-
-            byte[] buf = new byte[bufferLength];
-            int bytesRead = safenetFile.getInputStream().read(buf);
-            byteBuffer.clear();
-            byteBuffer.put(buf);
-            incrementPosition(bytesRead);
-
-            return bytesRead;
-        } catch(HystrixRuntimeException | SafenetBadRequestException e) {
-            throw new IOException("Get file '" + pathString + "' failed.", e);
-        }
+        int bytesRead = read(byteBuffer, position);
+        incrementPosition(bytesRead);
+        return bytesRead;
     }
 
     private void incrementPosition(long increment) {
@@ -59,13 +47,23 @@ public class SafenetFileChannel extends FileChannel {
     }
 
     @Override
-    public long read(ByteBuffer[] byteBuffers, int i, int i1) throws IOException {
-        return 0;
+    public long read(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
+        long totalBytesRead = 0;
+        int bytesRead;
+
+        for (int i=offset; i<(offset + length); i++) {
+            bytesRead = read(byteBuffers[i], offset);
+            totalBytesRead += bytesRead;
+            byteBuffers[i].position(bytesRead);
+            incrementPosition(bytesRead);
+        }
+
+        return totalBytesRead;
     }
 
     @Override
     public int write(ByteBuffer byteBuffer) throws IOException {
-        int bufferLength = byteBuffer.array().length;
+        int bufferLength = byteBuffer.capacity();
         String pathString = path.normalize().toString();
 
         try {
@@ -73,6 +71,7 @@ public class SafenetFileChannel extends FileChannel {
 
             if (message.equals("ok")) {
                 incrementPosition(bufferLength);
+                byteBuffer.position(bufferLength);
                 return bufferLength;
             } else {
                 return 0;
@@ -83,8 +82,22 @@ public class SafenetFileChannel extends FileChannel {
     }
 
     @Override
-    public long write(ByteBuffer[] byteBuffers, int i, int i1) throws IOException {
-        return 0;
+    public long write(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
+        // PG:ASSERT: Combined byte buffers must be less than a the maximum ByteBuffer size (2GB)
+
+        int totalBufferSize = 0;
+        for (int i=offset; i<(offset + length); i++) {
+            totalBufferSize += byteBuffers[i].array().length;
+        }
+
+        // PG: On totalBufferSize overflow, this will throw IllegalArgumentException or IndexOutOfBoundsException on put
+        //     As SafenetCreateFile can only accept a single write, this needs a better approach.
+        ByteBuffer combinedByteBuffer = ByteBuffer.allocate(totalBufferSize);
+        for (int i=offset; i<(offset + length); i++) {
+            combinedByteBuffer.put(byteBuffers[i]);
+        }
+
+        return write(combinedByteBuffer);
     }
 
     @Override
@@ -99,7 +112,14 @@ public class SafenetFileChannel extends FileChannel {
 
     @Override
     public long size() throws IOException {
-        return 0;
+        String pathString = path.normalize().toString();
+
+        try {
+            SafenetFile safenetFile = safenetFactory.makeGetFileAttributesCommand(pathString).execute();
+            return safenetFile.getContentLength();
+        } catch(HystrixRuntimeException | SafenetBadRequestException e) {
+            throw new IOException("Get file attributes for '" + pathString + "' failed.", e);
+        }
     }
 
     @Override
@@ -123,8 +143,21 @@ public class SafenetFileChannel extends FileChannel {
     }
 
     @Override
-    public int read(ByteBuffer byteBuffer, long l) throws IOException {
-        return 0;
+    public int read(ByteBuffer byteBuffer, long fromPosition) throws IOException {
+        int bufferLength = byteBuffer.capacity();
+        String pathString = path.normalize().toString() + String.format("?offset=%1$s&length=%2$s", fromPosition, bufferLength);
+        try {
+            SafenetFile safenetFile = safenetFactory.makeGetFileCommand(pathString).execute();
+
+            byte[] buf = new byte[bufferLength];
+            int bytesRead = safenetFile.getInputStream().read(buf);
+            byteBuffer.clear();
+            byteBuffer.put(buf);
+
+            return bytesRead;
+        } catch(HystrixRuntimeException | SafenetBadRequestException e) {
+            throw new IOException("Get file '" + pathString + "' failed.", e);
+        }
     }
 
     @Override
@@ -148,7 +181,5 @@ public class SafenetFileChannel extends FileChannel {
     }
 
     @Override
-    protected void implCloseChannel() throws IOException {
-
-    }
+    protected void implCloseChannel() throws IOException {}
 }

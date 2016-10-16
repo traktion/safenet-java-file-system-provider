@@ -75,7 +75,7 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> set, FileAttribute<?>... fileAttributes) throws IOException {
-        throw new UnsupportedOperationException();
+        return newFileChannel(path, set, fileAttributes);
     }
 
     @Override
@@ -135,7 +135,7 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public FileSystem newFileSystem(Path path, Map<String, ?> map) throws IOException {
-        return super.newFileSystem(path, map);
+        return newFileSystem(path.toUri(), map);
     }
 
     @Override
