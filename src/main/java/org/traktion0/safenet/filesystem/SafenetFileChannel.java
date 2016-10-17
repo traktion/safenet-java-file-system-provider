@@ -200,5 +200,10 @@ public class SafenetFileChannel extends FileChannel {
     }
 
     @Override
-    protected void implCloseChannel() throws IOException {}
+    protected void implCloseChannel() throws IOException {
+        if (inputStream != null) {
+            inputStream.close();
+            inputStream = null;
+        }
+    }
 }
