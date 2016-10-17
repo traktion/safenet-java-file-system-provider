@@ -6,6 +6,7 @@ import org.traktion0.safenet.client.commands.SafenetBadRequestException;
 import org.traktion0.safenet.client.commands.SafenetFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -25,8 +26,8 @@ public class SafenetFileChannel extends FileChannel {
     private final Path path;
     private final Set<? extends OpenOption> set;
 
-
     private long position;
+    private InputStream inputStream;
 
     public SafenetFileChannel(SafenetFactory safenetFactory, Path path, Set<? extends OpenOption> set, FileAttribute<?>... fileAttributes) {
         this.safenetFactory = safenetFactory;
@@ -52,7 +53,7 @@ public class SafenetFileChannel extends FileChannel {
         int bytesRead;
 
         for (int i=offset; i<(offset + length); i++) {
-            bytesRead = read(byteBuffers[i], offset);
+            bytesRead = read(byteBuffers[i]);
             totalBytesRead += bytesRead;
             byteBuffers[i].position(bytesRead);
             incrementPosition(bytesRead);
@@ -145,12 +146,30 @@ public class SafenetFileChannel extends FileChannel {
     @Override
     public int read(ByteBuffer byteBuffer, long fromPosition) throws IOException {
         int bufferLength = byteBuffer.capacity();
-        String pathString = path.normalize().toString() + String.format("?offset=%1$s&length=%2$s", fromPosition, bufferLength);
+        //String pathString = path.normalize().toString() + String.format("?offset=%1$s&length=%2$s", fromPosition, bufferLength);
+        String pathString = path.normalize().toString();
+
         try {
-            SafenetFile safenetFile = safenetFactory.makeGetFileCommand(pathString).execute();
 
             byte[] buf = new byte[bufferLength];
-            int bytesRead = safenetFile.getInputStream().read(buf);
+            // PG:TODO: use the below when offset/length
+
+            // PG: Position can only go forward - reset inputSteam if need to go backwards (TODO: Improve, as inefficient)
+            if (fromPosition < position) {
+                inputStream.close();
+                inputStream = null;
+            }
+
+            if (inputStream == null) {
+                SafenetFile safenetFile = safenetFactory.makeGetFileCommand(pathString).execute();
+                inputStream = safenetFile.getInputStream();
+                inputStream.skip(fromPosition);
+            }
+
+            //int bytesRead = safenetFile.getInputStream().read(buf);
+            // PG: This is likely to be very inefficient and some sort of caching should be used until a specified data
+            //     element can be extracted at query time.
+            int bytesRead = inputStream.read(buf, 0, bufferLength);
             byteBuffer.clear();
             byteBuffer.put(buf);
 

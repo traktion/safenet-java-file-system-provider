@@ -216,8 +216,8 @@ public class SafenetFileSystemProviderTest {
             thirdRead = new String(buf.array(), 0, readLength);
         }
 
-        verify(safenetFactory, times(3)).makeGetFileCommand(anyString());
-        verify(safenetFactory.makeGetFileCommand(anyString()), times(3)).execute();
+        verify(safenetFactory, times(1)).makeGetFileCommand(anyString());
+        verify(safenetFactory.makeGetFileCommand(anyString()), times(1)).execute();
 
         assertEquals("Lorem ipsum dolor sit amet, consectetur adipisci", firstRead);
         assertEquals("ng elit, sed do eiusmod temporincididunt ut labo", secondRead);

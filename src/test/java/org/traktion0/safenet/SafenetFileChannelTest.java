@@ -77,7 +77,7 @@ public class SafenetFileChannelTest {
         verify(safenetFactory, times(1)).makeGetFileCommand(anyString());
         verify(safenetFactory.makeGetFileCommand(anyString()), times(1)).execute();
 
-        assertEquals("Lorem ipsum dolor sit amet, consectetur adipisci", readContent);
+        assertEquals("g elit, sed do eiusmod temporincididunt ut labor", readContent);
     }
 
     @Test
@@ -108,8 +108,8 @@ public class SafenetFileChannelTest {
             }
         }
 
-        verify(safenetFactory, times(3)).makeGetFileCommand(anyString());
-        verify(safenetFactory.makeGetFileCommand(anyString()), times(3)).execute();
+        verify(safenetFactory, times(1)).makeGetFileCommand(anyString());
+        verify(safenetFactory.makeGetFileCommand(anyString()), times(1)).execute();
 
         String expected = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor" +
                 "incididunt ut labore et dolore magna aliqua.";
@@ -180,8 +180,8 @@ public class SafenetFileChannelTest {
             }
         }
 
-        verify(safenetFactory, times(3)).makeGetFileCommand(anyString());
-        verify(safenetFactory.makeGetFileCommand(anyString()), times(3)).execute();
+        verify(safenetFactory, times(1)).makeGetFileCommand(anyString());
+        verify(safenetFactory.makeGetFileCommand(anyString()), times(1)).execute();
 
         assertEquals("Lorem ipsum dolor sit am", readContent);
         assertEquals(24, readLength);
