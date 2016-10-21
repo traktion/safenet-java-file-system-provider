@@ -200,7 +200,11 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void checkAccess(Path path, AccessMode... accessModes) throws IOException {
-
+        try {
+            readAttributes(path, BasicFileAttributes.class);
+        } catch(IOException e) {
+            throw new NoSuchFileException(path.toString());
+        }
     }
 
     @Override

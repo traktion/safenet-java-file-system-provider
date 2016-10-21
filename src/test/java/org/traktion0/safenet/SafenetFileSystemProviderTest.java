@@ -427,4 +427,32 @@ public class SafenetFileSystemProviderTest {
 
         //assertNoException
     }
+
+    @Test(expected = NoSuchFileException.class)
+    public void testCheckAccessWithMissingFileReturnsException() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithGetDirectoryGetFileAttributesReturnsException();
+        env.put("SafenetFactory", safenetFactory);
+
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            provider.checkAccess(new SafenetPath(fileSystem, URI.create("missing.txt")));
+        }
+
+        //assertNoException
+    }
+
+    @Test
+    public void testCheckAccessWithMatchedFileReturnsSuccess() throws IOException {
+        Map<String, Object> env = new HashMap<>();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithGetFileAttributesReturnsSuccess();
+        env.put("SafenetFactory", safenetFactory);
+
+        SafenetFileSystemProvider provider = new SafenetFileSystemProvider();
+        try (FileSystem fileSystem = provider.newFileSystem(URI.create(URI_HOST_STRING), env)) {
+            provider.checkAccess(new SafenetPath(fileSystem, URI.create("maidsafe_layered_haze.jpg")));
+        }
+
+        //assertNoException
+    }
 }

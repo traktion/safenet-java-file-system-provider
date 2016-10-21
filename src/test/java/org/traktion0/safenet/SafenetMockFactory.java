@@ -1,5 +1,6 @@
 package org.traktion0.safenet;
 
+import com.netflix.hystrix.exception.HystrixBadRequestException;
 import org.traktion0.safenet.client.beans.Info;
 import org.traktion0.safenet.client.beans.SafenetDirectory;
 import org.traktion0.safenet.client.beans.SafenetFile;
@@ -187,6 +188,21 @@ public abstract class SafenetMockFactory {
         safenetDirectory.setSubDirectories(rootDirectories);
         when(safenetFactory.makeGetDirectoryCommand(anyString())).thenReturn(getDirectory);
         when(getDirectory.execute()).thenReturn(safenetDirectory);
+
+        return safenetFactory;
+    }
+
+    public static SafenetFactory makeSafenetFactoryMockWithGetDirectoryGetFileAttributesReturnsException() {
+        SafenetFactory safenetFactory = makeBasicSafenetFactoryMock();
+
+        when(safenetFactory.makeGetFileAttributesCommand(anyString())).thenThrow(
+                new SafenetBadRequestException("Not Found",
+                        new HystrixBadRequestException("Not Found")
+                ));
+        when(safenetFactory.makeGetDirectoryCommand(anyString())).thenThrow(
+                new SafenetBadRequestException("Not Found",
+                        new HystrixBadRequestException("Not Found")
+                ));
 
         return safenetFactory;
     }
