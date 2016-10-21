@@ -200,9 +200,7 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void checkAccess(Path path, AccessMode... accessModes) throws IOException {
-        try {
-            readAttributes(path, BasicFileAttributes.class);
-        } catch(IOException e) {
+        if (readAttributes(path, BasicFileAttributes.class) == null) {
             throw new NoSuchFileException(path.toString());
         }
     }
@@ -235,7 +233,8 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
                 }
             }
         } catch(HystrixRuntimeException | SafenetBadRequestException e) {
-            throw new IOException("Get file/directory attributes for '" + pathString + "' failed.", e);
+            //throw new IOException("Get file/directory attributes for '" + pathString + "' failed.", e);
+            return null;
         }
     }
 
