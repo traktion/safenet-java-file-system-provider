@@ -15,6 +15,7 @@ import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
@@ -205,35 +206,39 @@ public class SafenetFileSystemProvider extends FileSystemProvider {
 
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> aClass, LinkOption... linkOptions) {
+        String pathString = path.normalize().toString();
+        try {
+            // PG:TODO: Factory this out
+            try {
+                if (aClass == BasicFileAttributeView.class) {
+                    SafenetFile safenetFile = safenetFactory.makeGetFileAttributesCommand(pathString).execute();
+                    return (V) new SafenetBasicFileAttributeView(safenetFile);
+                }
+            } catch (SafenetBadRequestException e) {
+                // PG: Currently, there is no way to get info on a file or a directory, so have to test for file first
+                //     then fall back to test a directory
+                if (aClass == BasicFileAttributeView.class) {
+                    SafenetDirectory safenetDirectory = safenetFactory.makeGetDirectoryCommand(pathString).execute();
+                    return (V) new SafenetBasicFileAttributeView(safenetDirectory);
+                }
+            }
+        } catch(HystrixRuntimeException | SafenetBadRequestException e) {
+            // PG: return null when view is unavailable
+        }
         return null;
     }
 
     @Override
     public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> aClass, LinkOption... linkOptions) throws IOException {
-        String pathString = path.normalize().toString();
-        try {
-            // PG:TODO: Factory this out
-            try {
-                if (aClass == BasicFileAttributes.class) {
-                    SafenetFile safenetFile = safenetFactory.makeGetFileAttributesCommand(pathString).execute();
-                    return (A) new SafenetBasicFileAttributes(safenetFile);
-                } else {
-                    return null;
-                }
-            } catch (SafenetBadRequestException e) {
-                // PG: Currently, there is no way to get info on a file or a directory, so have to test for file first
-                //     then fall back to test a directory
-                if (aClass == BasicFileAttributes.class) {
-                    SafenetDirectory safenetDirectory = safenetFactory.makeGetDirectoryCommand(pathString).execute();
-                    return (A) new SafenetBasicFileAttributes(safenetDirectory);
-                } else {
-                    return null;
-                }
+        if (aClass == BasicFileAttributes.class) {
+            BasicFileAttributeView view = getFileAttributeView(path, BasicFileAttributeView.class, linkOptions);
+            if (view != null) {
+                return (A) view.readAttributes();
+            } else {
+                throw new NoSuchFileException(path.toString());
             }
-        } catch(SafenetBadRequestException e) {
-            throw new NoSuchFileException(path.toString());
-        } catch(HystrixRuntimeException e) {
-            throw new IOException("Get file/directory attributes for '" + pathString + "' failed.", e);
+        } else {
+            throw new UnsupportedOperationException();
         }
     }
 
