@@ -13,8 +13,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -114,22 +113,26 @@ public abstract class SafenetMockFactory {
     }
 
     public static SafenetFactory makeSafenetFactoryMockWithGetFileReturnsTextSuccess() {
+        return makeSafenetFactoryMockWithGetFileReturnsTextSuccess(0, 3067);
+    }
+
+    public static SafenetFactory makeSafenetFactoryMockWithGetFileReturnsTextSuccess(int offset, int length) {
         SafenetFactory safenetFactory = makeBasicSafenetFactoryMock();
 
         SafenetFile safenetFile = new SafenetFile();
         String fileContent = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor" +
                 "incididunt ut labore et dolore magna aliqua.";
-        InputStream stream = new ByteArrayInputStream(fileContent.getBytes(StandardCharsets.UTF_8));
+        InputStream stream = new ByteArrayInputStream(fileContent.getBytes(StandardCharsets.UTF_8), offset, length);
         safenetFile.setInputStream(stream);
         safenetFile.setContentLength(3067);
-        safenetFile.setContentRange("bytes 0-3067/3067");
+        safenetFile.setContentRange("bytes " + Integer.toString(offset) + "-" + Integer.toString(offset+length) + "/3067");
         safenetFile.setAcceptRanges("bytes");
         safenetFile.setContentType("image/svg+xml");
         safenetFile.setCreatedOn(OffsetDateTime.parse("2016-10-04T09:34:44.523Z"));
         safenetFile.setLastModified(OffsetDateTime.parse("2016-10-05T10:24:24.123Z"));
 
         GetFile getFile = mock(GetFile.class);
-        when(safenetFactory.makeGetFileCommand(anyString())).thenReturn(getFile);
+        when(safenetFactory.makeGetFileCommand(anyString(), anyLong(), anyLong())).thenReturn(getFile);
         when(getFile.execute()).thenReturn(safenetFile);
 
         return safenetFactory;
@@ -152,7 +155,7 @@ public abstract class SafenetMockFactory {
             safenetFile.setLastModified(OffsetDateTime.parse("2016-09-13T15:24:24.123Z"));
 
             GetFile getFile = mock(GetFile.class);
-            when(safenetFactory.makeGetFileCommand(anyString())).thenReturn(getFile);
+            when(safenetFactory.makeGetFileCommand(anyString(), anyLong(), anyLong())).thenReturn(getFile);
             when(getFile.execute()).thenReturn(safenetFile);
 
             return safenetFactory;

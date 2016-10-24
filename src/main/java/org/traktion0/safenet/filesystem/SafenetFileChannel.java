@@ -27,7 +27,6 @@ public class SafenetFileChannel extends FileChannel {
     private final Set<? extends OpenOption> set;
 
     private long position;
-    private InputStream inputStream;
 
     public SafenetFileChannel(SafenetFactory safenetFactory, Path path, Set<? extends OpenOption> set, FileAttribute<?>... fileAttributes) {
         this.safenetFactory = safenetFactory;
@@ -152,26 +151,14 @@ public class SafenetFileChannel extends FileChannel {
         try {
 
             byte[] buf = new byte[bufferLength];
-            // PG:TODO: use the below when offset/length
 
-            // PG: Position can only go forward - reset inputSteam if need to go backwards (TODO: Improve, as inefficient)
-            if (fromPosition < position) {
-                inputStream.close();
-                inputStream = null;
-            }
+            SafenetFile safenetFile = safenetFactory.makeGetFileCommand(pathString, fromPosition, bufferLength).execute();
+            InputStream inputStream = safenetFile.getInputStream();
 
-            if (inputStream == null) {
-                SafenetFile safenetFile = safenetFactory.makeGetFileCommand(pathString).execute();
-                inputStream = safenetFile.getInputStream();
-                inputStream.skip(fromPosition);
-            }
-
-            //int bytesRead = safenetFile.getInputStream().read(buf);
-            // PG: This is likely to be very inefficient and some sort of caching should be used until a specified data
-            //     element can be extracted at query time.
-            int bytesRead = inputStream.read(buf, 0, bufferLength);
+            int bytesRead = inputStream.read(buf);
             byteBuffer.clear();
             byteBuffer.put(buf);
+            inputStream.close();
 
             return bytesRead;
         } catch(HystrixRuntimeException | SafenetBadRequestException e) {
@@ -201,9 +188,5 @@ public class SafenetFileChannel extends FileChannel {
 
     @Override
     protected void implCloseChannel() throws IOException {
-        if (inputStream != null) {
-            inputStream.close();
-            inputStream = null;
-        }
     }
 }

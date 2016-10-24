@@ -21,8 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -216,8 +215,8 @@ public class SafenetFileSystemProviderTest {
             thirdRead = new String(buf.array(), 0, readLength);
         }
 
-        verify(safenetFactory, times(1)).makeGetFileCommand(anyString());
-        verify(safenetFactory.makeGetFileCommand(anyString()), times(1)).execute();
+        verify(safenetFactory, times(3)).makeGetFileCommand(anyString(), anyLong(), anyLong());
+        verify(safenetFactory.makeGetFileCommand(anyString(), anyLong(), anyLong()), times(3)).execute();
 
         assertEquals("Lorem ipsum dolor sit amet, consectetur adipisci", firstRead);
         assertEquals("ng elit, sed do eiusmod temporincididunt ut labo", secondRead);
@@ -244,8 +243,8 @@ public class SafenetFileSystemProviderTest {
             readLength = fileChannel.read(buf);
         }
 
-        verify(safenetFactory, times(1)).makeGetFileCommand(anyString());
-        verify(safenetFactory.makeGetFileCommand(anyString()), times(1)).execute();
+        verify(safenetFactory, times(1)).makeGetFileCommand(anyString(), anyLong(), anyLong());
+        verify(safenetFactory.makeGetFileCommand(anyString(), anyLong(), anyLong()), times(1)).execute();
 
         assertEquals(167924, readLength);
     }

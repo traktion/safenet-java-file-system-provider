@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -55,7 +56,7 @@ public class SafenetFileChannelTest {
     @Test
     public void testReadFromPositionReturnsSuccess() throws IOException {
         Map<String, Object> env = new HashMap<>();
-        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithGetFileReturnsTextSuccess();
+        SafenetFactory safenetFactory = SafenetMockFactory.makeSafenetFactoryMockWithGetFileReturnsTextSuccess(49, 48);
         env.put("SafenetFactory", safenetFactory);
 
         ByteBuffer buf = ByteBuffer.allocate(48);
@@ -74,8 +75,8 @@ public class SafenetFileChannelTest {
             readContent = new String(buf.array(), 0, readLength);
         }
 
-        verify(safenetFactory, times(1)).makeGetFileCommand(anyString());
-        verify(safenetFactory.makeGetFileCommand(anyString()), times(1)).execute();
+        verify(safenetFactory, times(1)).makeGetFileCommand(anyString(), anyLong(), anyLong());
+        verify(safenetFactory.makeGetFileCommand(anyString(), anyLong(), anyLong()), times(1)).execute();
 
         assertEquals("g elit, sed do eiusmod temporincididunt ut labor", readContent);
     }
@@ -108,8 +109,8 @@ public class SafenetFileChannelTest {
             }
         }
 
-        verify(safenetFactory, times(1)).makeGetFileCommand(anyString());
-        verify(safenetFactory.makeGetFileCommand(anyString()), times(1)).execute();
+        verify(safenetFactory, times(3)).makeGetFileCommand(anyString(), anyLong(), anyLong());
+        verify(safenetFactory.makeGetFileCommand(anyString(), anyLong(), anyLong()), times(3)).execute();
 
         String expected = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor" +
                 "incididunt ut labore et dolore magna aliqua.";
@@ -145,8 +146,8 @@ public class SafenetFileChannelTest {
             }
         }
 
-        verify(safenetFactory, times(1)).makeGetFileCommand(anyString());
-        verify(safenetFactory.makeGetFileCommand(anyString()), times(1)).execute();
+        verify(safenetFactory, times(1)).makeGetFileCommand(anyString(), anyLong(), anyLong());
+        verify(safenetFactory.makeGetFileCommand(anyString(), anyLong(), anyLong()), times(1)).execute();
 
         assertEquals("Lorem ipsum dolor sit amet, consectetur adipisci", readContent);
         assertEquals(48, readLength);
@@ -180,8 +181,8 @@ public class SafenetFileChannelTest {
             }
         }
 
-        verify(safenetFactory, times(1)).makeGetFileCommand(anyString());
-        verify(safenetFactory.makeGetFileCommand(anyString()), times(1)).execute();
+        verify(safenetFactory, times(3)).makeGetFileCommand(anyString(), anyLong(), anyLong());
+        verify(safenetFactory.makeGetFileCommand(anyString(), anyLong(), anyLong()), times(3)).execute();
 
         assertEquals("Lorem ipsum dolor sit am", readContent);
         assertEquals(24, readLength);
