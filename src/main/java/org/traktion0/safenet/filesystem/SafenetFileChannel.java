@@ -145,7 +145,6 @@ public class SafenetFileChannel extends FileChannel {
     @Override
     public int read(ByteBuffer byteBuffer, long fromPosition) throws IOException {
         int bufferLength = byteBuffer.capacity();
-        //String pathString = path.normalize().toString() + String.format("?offset=%1$s&length=%2$s", fromPosition, bufferLength);
         String pathString = path.normalize().toString();
 
         try {
